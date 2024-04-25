@@ -76,34 +76,25 @@ export const Table: React.FC<TopicTableProps> = ({
   const handleSelectedMuteUnmute = async () => {
     setLoading(true)
 
+    const promises: Promise<unknown>[] = []
+
     try {
-      const promises = Object.keys(checkedStates).map(async (checkedId) => {
-        const value = checkedStates[checkedId]
+      Object.keys(checkedStates).forEach((index) => {
+        const value = checkedStates[index]
 
         if (value) {
-          try {
-            await putNodeData(checkedId, { is_muted: !showMuted })
+          const promise = putNodeData(index, { is_muted: showMuted })
 
-            return checkedId
-          } catch (error) {
-            // Handle specific error if needed
-            console.error('Error updating node data:', error)
+          useTopicsStore.setState({
+            ids: ids.filter((i) => i !== index),
+            total: total - 1,
+          })
 
-            return null
-          }
+          promises.push(promise)
         }
-
-        return null
       })
 
-      const res = await Promise.all(promises)
-
-      useTopicsStore.setState({
-        ids: ids.filter((i) => !res.includes(i)),
-        total: total - res.length,
-      })
-
-      setCheckedStates({})
+      await Promise.all(promises)
 
       setLoading(false)
     } catch (error) {
@@ -187,6 +178,9 @@ export const Table: React.FC<TopicTableProps> = ({
                             </>
                           )}
                         </MuteStatusSection>
+                        <MultiSelectMerge onClick={() => handlePopoverAction('mergeTopic')}>
+                          <MergeIcon /> Merge
+                        </MultiSelectMerge>
                       </StatusBarSection>
                     </StyledTableCell>
                   </TableRow>
@@ -198,7 +192,6 @@ export const Table: React.FC<TopicTableProps> = ({
                       <TopicRow
                         key={i}
                         checkedStates={checkedStates}
-                        isMuteDisabled={Object.values(checkedStates).filter((isChecked) => isChecked).length > 1}
                         onClick={handleClick}
                         onSearch={handleSearch}
                         setCheckedStates={setCheckedStates}
@@ -218,24 +211,24 @@ export const Table: React.FC<TopicTableProps> = ({
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
                   {showMuted ? (
-                    <PopoverOption data-testid="unmute" onClick={() => handlePopoverAction('unMute')}>
+                    <PopoverOption onClick={() => handlePopoverAction('unMute')}>
                       {' '}
                       <VisibilityOn data-testid="" /> Unmute
                     </PopoverOption>
                   ) : (
-                    <PopoverOption data-testid="mute" onClick={() => handlePopoverAction('mute')}>
+                    <PopoverOption onClick={() => handlePopoverAction('mute')}>
                       {' '}
                       <VisibilityOff data-testid="VisibilityOff" /> Mute
                     </PopoverOption>
                   )}
-                  <PopoverOption data-testid="rename" onClick={() => handlePopoverAction('editTopic')}>
+                  <PopoverOption onClick={() => handlePopoverAction('editTopic')}>
                     <EditTopicIcon data-testid="EditTopicIcon" /> Rename
                   </PopoverOption>
 
-                  <PopoverOption data-testid="merge" onClick={() => handlePopoverAction('mergeTopic')}>
+                  <PopoverOption onClick={() => handlePopoverAction('mergeTopic')}>
                     <MergeIcon data-testid="MergeIcon" /> Merge
                   </PopoverOption>
-                  <PopoverOption data-testid="add_edge" onClick={() => handlePopoverAction('addEdge')}>
+                  <PopoverOption onClick={() => handlePopoverAction('addEdge')}>
                     <AddCircleIcon data-testid="AddCircleIcon" /> Add edge
                   </PopoverOption>
                 </PopoverWrapper>
@@ -353,4 +346,17 @@ const TableInnerWrapper = styled(Flex)`
   overflow: auto;
   flex: 1;
   width: 100%;
+`
+
+const MultiSelectMerge = styled.div`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 6px;
+  padding: 1px 6px;
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
 `
