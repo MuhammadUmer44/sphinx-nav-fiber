@@ -35,6 +35,8 @@ export type TStatParams = {
   num_tweet: number
   num_twitter_space: number
   num_video: number
+  num_documents: number
+  [key: string]: number
 }
 
 export type TPriceParams = {
@@ -127,8 +129,16 @@ export interface Schema {
   is_deleted?: boolean
 }
 
+export interface SchemaLink {
+  edge_type: string
+  ref_id: string
+  source: string
+  target: string
+}
+
 interface SchemaAllResponse {
   schemas: Schema[]
+  edges: SchemaLink[]
 }
 
 interface FullTranscriptResponse {
@@ -170,9 +180,11 @@ export const getRadarData = async (queryParams: TradarParams = defaultParams) =>
   return response
 }
 
-export const getTopicsData = async (queryParams: TtopicsParams = defaultParams) => {
+export const getTopicsData = async (queryParams: TtopicsParams = defaultParams, signal?: AbortSignal) => {
   const response = await api.get<FetchTopicResponse>(
     `/nodes/info?${new URLSearchParams({ ...defaultParams, ...queryParams }).toString()}`,
+    undefined,
+    signal,
   )
 
   return response

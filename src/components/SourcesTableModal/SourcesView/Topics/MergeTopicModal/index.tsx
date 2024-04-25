@@ -6,7 +6,7 @@ import { BaseModal } from '~/components/Modal'
 import { postMergeTopics } from '~/network/fetchSourcesData'
 import { useModal } from '~/stores/useModalStore'
 import { useTopicsStore } from '~/stores/useTopicsStore'
-import { Topic } from '~/types'
+import { TEdge, Topic } from '~/types'
 import { colors } from '~/utils/colors'
 import { IS_ALIAS } from '../../constants'
 import { TitleEditor } from './Title'
@@ -17,7 +17,7 @@ type Props = {
 }
 
 export type FormData = {
-  topic: string
+  name: string
 }
 
 export const MergeTopicModal: FC<Props> = ({ topic, onClose }) => {
@@ -26,11 +26,12 @@ export const MergeTopicModal: FC<Props> = ({ topic, onClose }) => {
   const form = useForm<FormData>({ mode: 'onChange' })
   const { watch, setValue, reset } = form
   const [loading, setLoading] = useState(false)
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
+  const [isSwapped, setIsSwapped] = useState(false)
+  const [selectedToNode, setSelectedToNode] = useState<TEdge | null>(null)
 
   useEffect(() => {
     if (topic) {
-      setValue('topic', topic?.name)
+      setValue('name', topic?.name)
     }
 
     return () => {
@@ -38,7 +39,7 @@ export const MergeTopicModal: FC<Props> = ({ topic, onClose }) => {
     }
   }, [topic, setValue, reset])
 
-  const topicValue = watch('topic')
+  const topicValue = watch('name')
 
   const closeHandler = () => {
     onClose()
@@ -46,20 +47,20 @@ export const MergeTopicModal: FC<Props> = ({ topic, onClose }) => {
   }
 
   const handleSave = async () => {
-    if (!selectedTopic || !data) {
+    if (!selectedToNode || !data) {
       return
     }
 
     setLoading(true)
 
     try {
-      await postMergeTopics({ from: topic.ref_id, to: selectedTopic?.ref_id })
+      await postMergeTopics({ from: topic.ref_id, to: selectedToNode?.ref_id })
 
       const { ref_id: id } = topic
 
       data[id] = { ...data[id], edgeList: [IS_ALIAS], edgeCount: data[id].edgeCount - 1 }
 
-      useTopicsStore.setState({ ids: ids.filter((i) => i !== selectedTopic.ref_id), total: total - 1 })
+      useTopicsStore.setState({ ids: ids.filter((i) => i !== selectedToNode.ref_id), total: total - 1 })
 
       if (data) {
         const newData = { ...data }
@@ -78,9 +79,15 @@ export const MergeTopicModal: FC<Props> = ({ topic, onClose }) => {
   }
 
   return (
-    <BaseModal id="mergeTopic" kind="regular" onClose={closeHandler} preventOutsideClose>
+    <BaseModal id="mergeTopic" kind="small" onClose={closeHandler} preventOutsideClose>
       <FormProvider {...form}>
-        <TitleEditor from={topic.name} onSelect={setSelectedTopic} selectedTopic={selectedTopic} />
+        <TitleEditor
+          from={topic.name}
+          isSwapped={isSwapped}
+          onSelect={setSelectedToNode}
+          selectedToNode={selectedToNode}
+          setIsSwapped={() => setIsSwapped(!isSwapped)}
+        />
         <Button color="secondary" disabled={loading} onClick={handleSave} size="large" variant="contained">
           Merge topics
           {loading && <ClipLoader color={colors.BLUE_PRESS_STATE} size={10} />}

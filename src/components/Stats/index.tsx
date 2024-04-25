@@ -6,17 +6,25 @@ import BudgetIcon from '~/components/Icons/BudgetIcon'
 import NodesIcon from '~/components/Icons/NodesIcon'
 import TwitterIcon from '~/components/Icons/TwitterIcon'
 import VideoIcon from '~/components/Icons/VideoIcon'
-import { TStatParams, getStats } from '~/network/fetchSourcesData'
+import { getStats, TStatParams } from '~/network/fetchSourcesData'
 import { useDataStore } from '~/stores/useDataStore'
 import { useUserStore } from '~/stores/useUserStore'
 import { TStats } from '~/types'
-import { formatBudget, formatNumberWithCommas } from '~/utils'
+import { formatBudget, formatStatsResponse } from '~/utils'
 import { colors } from '~/utils/colors'
+import { Flex } from '../common/Flex'
 import DocumentIcon from '../Icons/DocumentIcon'
 import EpisodeIcon from '../Icons/EpisodeIcon'
-import { Flex } from '../common/Flex'
 
-export const StatsConfig = [
+interface StatConfigItem {
+  name: string
+  icon: JSX.Element
+  key: keyof TStats
+  dataKey: keyof TStatParams
+  mediaType: string
+}
+
+export const StatsConfig: StatConfigItem[] = [
   {
     name: 'Nodes',
     icon: <NodesIcon />,
@@ -75,11 +83,7 @@ export const Stats = () => {
         const data = await getStats()
 
         if (data) {
-          const updatedStats: TStats = {}
-
-          StatsConfig.forEach(({ key, dataKey }) => {
-            updatedStats[key as keyof TStats] = formatNumberWithCommas(data[dataKey as keyof TStatParams] ?? 0)
-          })
+          const updatedStats = formatStatsResponse(data)
 
           setStats(updatedStats)
         }
@@ -103,7 +107,7 @@ export const Stats = () => {
       <StatisticsWrapper>
         {StatsConfig.map(({ name, icon, key, mediaType }) =>
           stats[key as keyof TStats] !== '0' ? (
-            <Stat key={name} onClick={() => handleStatClick(mediaType)}>
+            <Stat key={name} data-testid={mediaType} onClick={() => handleStatClick(mediaType)}>
               <div className="icon">{icon}</div>
               <div className="text">{stats[key as keyof TStats]}</div>
             </Stat>

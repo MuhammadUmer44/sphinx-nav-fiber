@@ -20,13 +20,21 @@ type TTableRaw = {
   onSearch: (search: string) => void
   checkedStates: { [refId: string]: boolean }
   setCheckedStates: React.Dispatch<React.SetStateAction<{ [refId: string]: boolean }>>
+  isMuteDisabled?: boolean
 }
 
 interface CheckboxIconProps {
   checked?: boolean
 }
 
-const TableRowComponent: FC<TTableRaw> = ({ topic, onClick, onSearch, checkedStates, setCheckedStates }) => {
+const TableRowComponent: FC<TTableRaw> = ({
+  topic,
+  onClick,
+  onSearch,
+  checkedStates,
+  setCheckedStates,
+  isMuteDisabled,
+}) => {
   const [ids, total] = useTopicsStore((s) => [s.ids, s.total])
   const [loading, setLoading] = useState(false)
 
@@ -36,7 +44,7 @@ const TableRowComponent: FC<TTableRaw> = ({ topic, onClick, onSearch, checkedSta
     setLoading(true)
 
     try {
-      await putNodeData(refId, { muted_topic: shouldMute })
+      await putNodeData(refId, { is_muted: shouldMute })
 
       useTopicsStore.setState({
         ids: ids.filter((i) => i !== refId),
@@ -151,16 +159,24 @@ const TableRowComponent: FC<TTableRaw> = ({ topic, onClick, onSearch, checkedSta
               </ClipLoaderWrapper>
             ) : (
               <Flex direction="row">
-                {topic.muted_topic ? (
-                  <IconButton className="centered" onClick={() => handleMute(topic.ref_id, false)}>
+                {topic.is_muted ? (
+                  <IconButton
+                    className="centered"
+                    disabled={isMuteDisabled}
+                    onClick={() => handleMute(topic.ref_id, false)}
+                  >
                     <ProfileShow />
                   </IconButton>
                 ) : (
-                  <IconButton className="centered" onClick={() => handleMute(topic.ref_id, true)}>
+                  <IconButton
+                    className="centered"
+                    disabled={isMuteDisabled}
+                    onClick={() => handleMute(topic.ref_id, true)}
+                  >
                     <ProfileHide />
                   </IconButton>
                 )}
-                <IconButton onClick={(e) => onClick(e, topic.ref_id)}>
+                <IconButton disabled={isMuteDisabled} onClick={(e) => onClick(e, topic.ref_id)}>
                   <ThreeDotsIcons data-testid="ThreeDotsIcons" />
                 </IconButton>
               </Flex>

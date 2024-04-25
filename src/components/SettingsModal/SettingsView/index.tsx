@@ -75,7 +75,7 @@ export const SettingsView: React.FC<Props> = ({ onClose }) => {
   ]
 
   return (
-    <Wrapper direction="column">
+    <Wrapper data-testid="settings-modal" direction="column">
       <SettingsHeader>
         <StyledTabs aria-label="settings tabs" onChange={handleChange} value={value}>
           {tabs.map((tab, index) => (
@@ -85,7 +85,7 @@ export const SettingsView: React.FC<Props> = ({ onClose }) => {
       </SettingsHeader>
       {tabs.map((tab, index) => (
         <TabPanel key={tab.label} index={index} value={value}>
-          <tab.component initialValues={appMetaData} onClose={onClose} />
+          {appMetaData && <tab.component initialValues={appMetaData} onClose={onClose} />}
         </TabPanel>
       ))}
     </Wrapper>

@@ -76,25 +76,34 @@ export const Table: React.FC<TopicTableProps> = ({
   const handleSelectedMuteUnmute = async () => {
     setLoading(true)
 
-    const promises: Promise<unknown>[] = []
-
     try {
-      Object.keys(checkedStates).forEach((index) => {
-        const value = checkedStates[index]
+      const promises = Object.keys(checkedStates).map(async (checkedId) => {
+        const value = checkedStates[checkedId]
 
         if (value) {
-          const promise = putNodeData(index, { muted_topic: showMuted })
+          try {
+            await putNodeData(checkedId, { is_muted: !showMuted })
 
-          useTopicsStore.setState({
-            ids: ids.filter((i) => i !== index),
-            total: total - 1,
-          })
+            return checkedId
+          } catch (error) {
+            // Handle specific error if needed
+            console.error('Error updating node data:', error)
 
-          promises.push(promise)
+            return null
+          }
         }
+
+        return null
       })
 
-      await Promise.all(promises)
+      const res = await Promise.all(promises)
+
+      useTopicsStore.setState({
+        ids: ids.filter((i) => !res.includes(i)),
+        total: total - res.length,
+      })
+
+      setCheckedStates({})
 
       setLoading(false)
     } catch (error) {
@@ -189,6 +198,7 @@ export const Table: React.FC<TopicTableProps> = ({
                       <TopicRow
                         key={i}
                         checkedStates={checkedStates}
+                        isMuteDisabled={Object.values(checkedStates).filter((isChecked) => isChecked).length > 1}
                         onClick={handleClick}
                         onSearch={handleSearch}
                         setCheckedStates={setCheckedStates}
@@ -208,24 +218,24 @@ export const Table: React.FC<TopicTableProps> = ({
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
                   {showMuted ? (
-                    <PopoverOption onClick={() => handlePopoverAction('unMute')}>
+                    <PopoverOption data-testid="unmute" onClick={() => handlePopoverAction('unMute')}>
                       {' '}
                       <VisibilityOn data-testid="" /> Unmute
                     </PopoverOption>
                   ) : (
-                    <PopoverOption onClick={() => handlePopoverAction('mute')}>
+                    <PopoverOption data-testid="mute" onClick={() => handlePopoverAction('mute')}>
                       {' '}
                       <VisibilityOff data-testid="VisibilityOff" /> Mute
                     </PopoverOption>
                   )}
-                  <PopoverOption onClick={() => handlePopoverAction('editTopic')}>
+                  <PopoverOption data-testid="rename" onClick={() => handlePopoverAction('editTopic')}>
                     <EditTopicIcon data-testid="EditTopicIcon" /> Rename
                   </PopoverOption>
 
-                  <PopoverOption onClick={() => handlePopoverAction('mergeTopic')}>
+                  <PopoverOption data-testid="merge" onClick={() => handlePopoverAction('mergeTopic')}>
                     <MergeIcon data-testid="MergeIcon" /> Merge
                   </PopoverOption>
-                  <PopoverOption onClick={() => handlePopoverAction('addEdge')}>
+                  <PopoverOption data-testid="add_edge" onClick={() => handlePopoverAction('addEdge')}>
                     <AddCircleIcon data-testid="AddCircleIcon" /> Add edge
                   </PopoverOption>
                 </PopoverWrapper>
